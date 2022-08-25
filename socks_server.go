@@ -24,7 +24,7 @@ func handler(conn net.Conn) {
 	}
 	conn.Write(res)
 	// 连接阶段
-	buf = make([]byte, 1+1+1+1+16+2)
+	buf = make([]byte, 1+1+1+1+255+2)
 	n, err = reader.Read(buf)
 	if err != nil {
 		log.Printf("read failed: %v\n", err)

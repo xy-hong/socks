@@ -20,7 +20,7 @@ func TestHandleHandshake(t *testing.T) {
 		b := []byte{0x05}
 		_, err := protocol.HandleHandshake(b)
 		if err == nil {
-			t.Error("")
+			t.Errorf("err should not be nil")
 		}
 	})
 }
