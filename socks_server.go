@@ -14,7 +14,7 @@ func handler(conn net.Conn) {
 	buf := make([]byte, 1+1+255)
 	n, err := reader.Read(buf)
 	if err != nil {
-		log.Printf("read failed: %v\n", err)
+		log.Printf("read failed: %v", err)
 		return
 	}
 	res, err := protocol.HandleHandshake(buf[:n])
@@ -23,6 +23,7 @@ func handler(conn net.Conn) {
 		return
 	}
 	conn.Write(res)
+	log.Printf("handshark finish, send reply %v", res)
 	// 连接阶段
 	buf = make([]byte, 1+1+1+1+255+2)
 	n, err = reader.Read(buf)
@@ -32,13 +33,14 @@ func handler(conn net.Conn) {
 	}
 	res, err = protocol.HandleConnect(buf[:n])
 	if err != nil {
-		log.Printf("")
 		return
 	}
+	conn.Write(res)
 }
 
 func main() {
 	listen, err := net.Listen("tcp", ":9999")
+	log.Printf("socks5 server started, listening at port 9999")
 	if err != nil {
 		log.Printf("Listen failed: %v\n", err)
 	}
