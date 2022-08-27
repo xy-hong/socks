@@ -27,7 +27,7 @@ func HandleHandshake(buf []byte) ([]byte, error) {
 
 	nMethods := buf[1]
 	if int(nMethods) != len(buf[2:]) {
-		return nil, errors.New("")
+		return nil, errors.New("unmatched method length")
 	}
 
 	// TODO 选择一种验证方式, 先不需要验证
@@ -41,7 +41,6 @@ func HandleHandshake(buf []byte) ([]byte, error) {
  */
 func HandleConnect(buf []byte) ([]byte, error) {
 	if len(buf) < 6 {
-		log.Printf("")
 		return nil, errors.New("can't resolve format")
 	}
 
@@ -78,7 +77,7 @@ func HandleConnect(buf []byte) ([]byte, error) {
 }
 
 func HandleDstConnect(cmd byte, aType byte, dstAdrss []byte, port []byte) ([]byte, error) {
-	targetServ := net.JoinHostPort(string(dstAdrss), string(port))
+	targetServ := net.JoinHostPort(ToIpv4(dstAdrss), ToPort(port))
 	switch cmd {
 	case 0x01:
 		// connect
@@ -93,9 +92,9 @@ func HandleDstConnect(cmd byte, aType byte, dstAdrss []byte, port []byte) ([]byt
 		log.Printf("connect to target %v succeed", string(dstAdrss))
 		return rsp, nil
 	case 0x02:
-		// bind
+		// bind TODO
 	case 0x03:
-		// udp associate
+		// udp associate TODO
 	}
 	return nil, errors.New("unsupport cmd")
 }

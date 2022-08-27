@@ -19,7 +19,7 @@ func handler(conn net.Conn) {
 	}
 	res, err := protocol.HandleHandshake(buf[:n])
 	if err != nil {
-		log.Printf("")
+		log.Printf("err happen: %v", err)
 		return
 	}
 	conn.Write(res)
@@ -33,6 +33,7 @@ func handler(conn net.Conn) {
 	}
 	res, err = protocol.HandleConnect(buf[:n])
 	if err != nil {
+		log.Printf("err hapened: %v\n", err)
 		return
 	}
 	conn.Write(res)
@@ -46,7 +47,11 @@ func main() {
 	}
 
 	for {
-		conn, _ := listen.Accept()
+		conn, err := listen.Accept()
+		if err != nil {
+			log.Printf("error happen: %v", err)
+			continue
+		}
 		go handler(conn)
 	}
 }
