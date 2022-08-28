@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"io"
 	"log"
 	"net"
 )
@@ -39,14 +40,14 @@ func HandleHandshake(buf []byte) ([]byte, error) {
  *	ver	|	cmd	|	rsv	|	aType	|	dstAddr	|	dstPort
  *  0x05|	1	|	0x00|	1		|	n		|	2
  */
-func HandleConnect(buf []byte) ([]byte, error) {
+func HandleConnect(buf []byte) (net.Conn, []byte, error) {
 	if len(buf) < 6 {
-		return nil, errors.New("can't resolve format")
+		return nil, nil, errors.New("can't resolve format")
 	}
 
 	ver := buf[0]
 	if ver != VER {
-		return nil, errors.New("unsupported protocol version")
+		return nil, nil, errors.New("unsupported protocol version")
 	}
 
 	cmd := buf[1]
@@ -68,33 +69,41 @@ func HandleConnect(buf []byte) ([]byte, error) {
 		addrLen = 16
 		dstAddr = buf[4 : 4+addrLen]
 	default:
-		return nil, errors.New("unsupported address type")
+		return nil, nil, errors.New("unsupported address type")
 	}
 	dstPort := buf[4+addrLen:]
 
-	replay, err := HandleDstConnect(cmd, aType, dstAddr, dstPort)
-	return replay, err
+	conn, replay, err := HandleDstConnect(cmd, aType, dstAddr, dstPort)
+	return conn, replay, err
 }
 
-func HandleDstConnect(cmd byte, aType byte, dstAdrss []byte, port []byte) ([]byte, error) {
+func HandleDstConnect(cmd byte, aType byte, dstAdrss []byte, port []byte) (net.Conn, []byte, error) {
 	targetServ := net.JoinHostPort(ToIpv4(dstAdrss), ToPort(port))
 	switch cmd {
 	case 0x01:
 		// connect
-		_, err := net.Dial("tcp", targetServ)
+		conn, err := net.Dial("tcp", targetServ)
 		if err != nil {
 			log.Printf("connect to target %v failed, err: %v", targetServ, err)
-			return nil, err
+			return nil, nil, err
 		}
 		b := []byte{VER, 0x00, 0x00, aType}
 		rsp := append(b, dstAdrss...)
 		rsp = append(rsp, port...)
-		log.Printf("connect to target %v succeed", string(dstAdrss))
-		return rsp, nil
+		log.Printf("connect to target %v:%v succeed", ToIpv4(dstAdrss), ToPort(port))
+		return conn, rsp, nil
 	case 0x02:
 		// bind TODO
 	case 0x03:
 		// udp associate TODO
 	}
-	return nil, errors.New("unsupport cmd")
+	return nil, nil, errors.New("unsupport cmd")
+}
+
+func CopyWrite(dst net.Conn, src net.Conn) {
+	io.Copy(dst, src)
+}
+
+func CopyRead(dst net.Conn, src net.Conn) {
+	io.Copy(src, dst)
 }

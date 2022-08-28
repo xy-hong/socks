@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
+	"io"
 	"log"
 	"net"
 	"socks/protocol"
 )
 
 func handler(conn net.Conn) {
-	defer conn.Close()
 	// 握手阶段
 	reader := bufio.NewReader(conn)
 	buf := make([]byte, 1+1+255)
@@ -31,12 +31,14 @@ func handler(conn net.Conn) {
 		log.Printf("read failed: %v\n", err)
 		return
 	}
-	res, err = protocol.HandleConnect(buf[:n])
+	dstConn, res, err := protocol.HandleConnect(buf[:n])
 	if err != nil {
 		log.Printf("err hapened: %v\n", err)
 		return
 	}
 	conn.Write(res)
+	go func() { io.Copy(conn, dstConn) }()
+	go func() { io.Copy(dstConn, conn) }()
 }
 
 func main() {
